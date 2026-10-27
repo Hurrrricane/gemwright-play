@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>宝石工坊</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #101218; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      /* 竖屏一列：手机上铺满，电脑上按 9:16 居中 */
+      #frame { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: min(100vw, calc(100vh * 0.5625)); }
+      /* 画布只按 720 宽画，放大交给浏览器合成（docs/11 第 2.4 节） */
+      #unity-canvas { display: block; width: 100%; height: 100%; background: #101218; image-rendering: pixelated; outline: none; }
+      #loading { position: absolute; left: 15%; right: 15%; top: 50%; height: 6px; background: #2a2d36; }
+      #loading div { height: 100%; width: 0; background: #e8a23c; }
+      /* 进度条下面一行：下了多少、总共多大、多快（10-27 用户要的） */
+      #loading-text { position: absolute; left: 0; right: 0; top: 14px; color: #b9a77c; font: 13px sans-serif; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+      #error { position: absolute; left: 16px; right: 16px; top: 40%; color: #f2d18b; font: 14px sans-serif; text-align: center; display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="frame">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+      <div id="loading"><div></div><span id="loading-text"></span></div>
+      <div id="error"></div>
+    <style>
+      #gate { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #101218; color: #f2d18b; font: 16px sans-serif; z-index: 1; }
+      #gate .title { font-size: 24px; margin-bottom: 8px; }
+      #gate input[type=password] { width: 60%; padding: 10px; font-size: 16px; border: 1px solid #5a4a2a; background: #1c1f27; color: #f2d18b; text-align: center; -webkit-user-select: text; user-select: text; }
+      #gate label { font-size: 14px; color: #b9a77c; }
+      #gate button { padding: 10px 36px; font-size: 16px; border: 0; background: #e8a23c; color: #101218; }
+      #gate .hint { height: 20px; font-size: 14px; color: #e66a4a; }
+    </style>
+    <form id="gate" autocomplete="on">
+      <div class="title">宝石工坊</div>
+      <input type="password" placeholder="密码" autocomplete="current-password">
+      <label><input type="checkbox" checked> 记住密码</label>
+      <button type="submit">进入</button>
+      <div class="hint"></div>
+    </form>
+    <script src="gate.js"></script>
+
+    </div>
+    <script src="Build/web-unity.loader.js"></script>
+    <script>
+      // 渲染宽度固定 720（逻辑宽 360 × 2），不随手机的 devicePixelRatio 变大
+      var RENDER_WIDTH = 720;
+      var canvas = document.querySelector("#unity-canvas");
+      // ?dpr=native：按手机原生分辨率画，只用来对比性能
+      var native = /[?&]dpr=native\b/.test(location.search);
+      function pixelRatio() { return native ? window.devicePixelRatio || 1 : RENDER_WIDTH / Math.max(1, canvas.clientWidth); }
+      var config = {
+        dataUrl: "Build/web-unity.data.unityweb",
+        frameworkUrl: "Build/web-unity.framework.js.unityweb",
+        codeUrl: "Build/web-unity.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "CodeDish",
+        productName: "宝石工坊",
+        productVersion: "0.3.9",
+        devicePixelRatio: pixelRatio(),
+      };
+      var bar = document.querySelector("#loading div"), label = document.querySelector("#loading-text");
+      var gated = !!window.gemwrightGate;
+      // 发布到 GitHub Pages 时 publish_web.py 会插入 gate.js：先输密码、解密，再把解出来的 blob 地址填进 config；大小和速度由它写
+      (gated ? window.gemwrightGate(config, bar, label) : Promise.resolve())
+        .then(function () {
+          if (gated) label.textContent = "启动中";
+          // 没有密码门时文件由 Unity 的加载器下，它只报比例，就写百分比
+          return createUnityInstance(canvas, config, function (progress) { bar.style.width = (gated ? 80 + progress * 20 : progress * 100) + "%"; if (!gated) label.textContent = Math.floor(progress * 100) + "%"; }); // 有密码门时前 80% 是它的下载，接着往后走，不回头
+        })
+        .then(function (instance) {
+          window.unityInstance = instance;
+          document.querySelector("#loading").remove();
+          window.addEventListener("resize", function () { instance.Module.devicePixelRatio = pixelRatio(); });
+        })
+        .catch(function (message) {
+          var error = document.querySelector("#error");
+          error.textContent = "加载失败：" + message;
+          error.style.display = "block";
+        });
+    </script>
+  </body>
+</html>

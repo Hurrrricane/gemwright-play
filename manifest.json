@@ -1,0 +1,31 @@
+{
+ "salt": "NeZleRAqiIkbbCtiNb7r1Q==",
+ "iterations": 600000,
+ "check": {
+  "iv": "/0gSiiMveJrgJcaZ",
+  "data": "qi2ueEB+S9tSfsx0iWhyNYG9PnTT4a1SkA=="
+ },
+ "files": {
+  "dataUrl": {
+   "name": "data-271e106f3714.bin",
+   "iv": "lkthWZQ2ASuWWy2s",
+   "size": 9324928,
+   "type": "application/octet-stream",
+   "gzip": true
+  },
+  "frameworkUrl": {
+   "name": "framework-71be33aef01b.bin",
+   "iv": "uEdtLzzm3TjHYtN0",
+   "size": 83188,
+   "type": "application/javascript",
+   "gzip": true
+  },
+  "codeUrl": {
+   "name": "code-323bc81b988e.bin",
+   "iv": "dTF6iwgExKU8VbQ7",
+   "size": 10357489,
+   "type": "application/wasm",
+   "gzip": true
+  }
+ }
+}
